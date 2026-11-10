@@ -26,17 +26,31 @@ and with a local Ollama server.
 - **Menu bar only.** No Dock icon, no window clutter. Keys live in the macOS
   Keychain; the only thing that leaves your Mac is the screenshot and your
   prompt, sent to the provider you selected.
+- **Auto updates.** Checks GitHub Releases periodically (or on demand via
+  *Check for Updates…*) and downloads/installs newer versions in place.
 
 ---
 
-## Build
+## Download or Build
+
+### Download Release
+Download the latest pre-built `.zip` from [Releases](https://github.com/namikemen/ocr-latex/releases).
+Unzip `OCR-LaTeX-x.x.x-macOS.zip` and move `OCR LaTeX.app` to `/Applications`.
+
+*Note for downloaded builds*: Because the app is ad-hoc signed, macOS Gatekeeper may show a warning on first launch. If prompted, run:
+```bash
+xattr -dr com.apple.quarantine "/Applications/OCR LaTeX.app"
+```
+
+### Build from source
 
 Requires macOS 14+ and the Swift toolchain (Xcode or the Command Line Tools).
 
 ```bash
-./build_app.sh              # release build -> dist/OCR LaTeX.app
-./build_app.sh debug        # debug build
-./build_app.sh release run  # build and launch
+./build_app.sh                    # release build -> dist/OCR LaTeX.app
+./build_app.sh release universal  # universal binary (Apple Silicon + Intel)
+./build_app.sh debug              # debug build
+./build_app.sh release run        # build and launch
 ```
 
 The script compiles with SwiftPM, assembles the `.app` bundle, copies the

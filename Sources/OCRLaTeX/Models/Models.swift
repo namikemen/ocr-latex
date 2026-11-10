@@ -72,6 +72,8 @@ struct AppSettings: Codable, Equatable {
     /// Retry with the other configured providers when the selected one fails.
     var fallbackEnabled: Bool = true
     var launchAtLogin: Bool = false
+    /// Look for a newer GitHub release in the background.
+    var autoUpdateCheck: Bool = true
 
     static let defaultPrompt = """
     You are a precise OCR engine that converts images of mathematical content into LaTeX.
@@ -90,7 +92,7 @@ struct AppSettings: Codable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case prompt, hotkeyKeyCode, hotkeyModifiers, pngScale, pngTransparent, pngPadding
-        case whiteText, compactLatex, fallbackEnabled, launchAtLogin
+        case whiteText, compactLatex, fallbackEnabled, launchAtLogin, autoUpdateCheck
     }
 
     init(from decoder: Decoder) throws {
@@ -106,6 +108,7 @@ struct AppSettings: Codable, Equatable {
         compactLatex = (try? c.decodeIfPresent(Bool.self, forKey: .compactLatex)) ?? defaults.compactLatex
         fallbackEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .fallbackEnabled)) ?? defaults.fallbackEnabled
         launchAtLogin = (try? c.decodeIfPresent(Bool.self, forKey: .launchAtLogin)) ?? defaults.launchAtLogin
+        autoUpdateCheck = (try? c.decodeIfPresent(Bool.self, forKey: .autoUpdateCheck)) ?? defaults.autoUpdateCheck
     }
 }
 

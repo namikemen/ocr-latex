@@ -4,7 +4,9 @@ import SwiftUI
 @main
 enum Launcher {
     static func main() {
-        if CommandLine.arguments.contains("--selftest") || CommandLine.arguments.contains("--llmtest") {
+        if CommandLine.arguments.contains("--selftest") ||
+           CommandLine.arguments.contains("--llmtest") ||
+           CommandLine.arguments.contains("--updatetest") {
             SelfTest.run()
             return
         }
@@ -97,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 struct MenuContent: View {
     @EnvironmentObject private var model: AppModel
+    @ObservedObject private var updates = UpdateService.shared
 
     var body: some View {
         Button("Capture Region…") {
@@ -142,6 +145,18 @@ struct MenuContent: View {
             }
         }
         .keyboardShortcut(",", modifiers: .command)
+
+        Divider()
+
+        if let update = updates.available {
+            Button("Update to \(update.version)…") {
+                updates.promptInstall(update)
+            }
+        }
+        Button(updates.isWorking ? "Checking for Updates…" : "Check for Updates…") {
+            Task { await updates.checkInteractively() }
+        }
+        .disabled(updates.isWorking)
 
         Divider()
 

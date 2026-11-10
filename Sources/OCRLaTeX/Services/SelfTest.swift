@@ -11,6 +11,10 @@ enum SelfTest {
             runLLMPlumbingTest()
             return
         }
+        if CommandLine.arguments.contains("--updatetest") {
+            runUpdateTest()
+            return
+        }
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.accessory)
 
@@ -74,6 +78,57 @@ enum SelfTest {
             RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
         }
         exit(finished ? 0 : 1)
+    }
+
+    /// Checks the GitHub release feed and the version comparison without
+    /// touching the installed bundle: `--updatetest`.
+    private static func runUpdateTest() {
+        _ = NSApplication.shared
+        NSApp.setActivationPolicy(.prohibited)
+
+        var finished = false
+        var failed = false
+
+        Task { @MainActor in
+            let service = UpdateService.shared
+            let current = service.currentVersion
+
+            let cases: [(String, String, Bool)] = [
+                ("1.2.0", "1.1.9", true),
+                ("v1.1.0", "1.1.0", false),
+                ("1.10.0", "1.9.9", true),
+                ("2.0", "1.9.9", true),
+                ("1.0.0", "1.0.1", false),
+                ("v1.2.0-rc1", "1.1.0", true)
+            ]
+            for (candidate, base, expected) in cases {
+                let actual = service.isNewer(candidate, than: base)
+                if actual != expected {
+                    print("FAILED compare: \(candidate) > \(base) expected \(expected) got \(actual)")
+                    failed = true
+                }
+            }
+            print("compare: \(failed ? "FAILED" : "ok") (\(cases.count) cases)")
+
+            let release = await service.check(interactive: false)
+            if let release {
+                print("update: current \(current), latest \(release.version) [\(release.tag)], newer \(service.isNewer(release.version, than: current) ? "yes" : "no")")
+                print("update: asset \(release.assetName ?? "none") \(release.sizeText) \(release.assetURL?.absoluteString ?? "")")
+            } else if service.status.hasPrefix("No releases") {
+                print("update: current \(current), no releases published yet")
+            } else {
+                print("update: FAILED — \(service.status)")
+                failed = true
+            }
+
+            finished = true
+        }
+
+        let deadline = Date().addingTimeInterval(30)
+        while !finished && Date() < deadline {
+            RunLoop.main.run(mode: .default, before: Date().addingTimeInterval(0.05))
+        }
+        exit((finished && !failed) ? 0 : 1)
     }
 
     /// Exercises the HTTP layer against a mock OpenAI/Ollama server.

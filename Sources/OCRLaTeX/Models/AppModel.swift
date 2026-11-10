@@ -70,6 +70,11 @@ final class AppModel: ObservableObject {
         NSLog("OCRLaTeX: shortcut %@ (%@)", Hotkey.describe(keyCode: settings.hotkeyKeyCode, modifiers: settings.hotkeyModifiers), HotkeyManager.shared.registered ? "registered" : "FAILED")
         Task { await MathRenderer.shared.waitUntilReady() }
         needsSetup = !isConfigured
+
+        // Snapshot/demo runs are headless-ish: skip the network round trip.
+        if !CommandLine.arguments.contains(where: { $0.hasPrefix("--") }) {
+            UpdateService.shared.checkInBackgroundIfDue(settings: settings)
+        }
     }
 
     func registerHotkey(force: Bool = false) {

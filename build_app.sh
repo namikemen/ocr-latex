@@ -1,20 +1,30 @@
 #!/bin/bash
 # Build OCRLaTeX and package it as a macOS .app bundle.
-#   ./build_app.sh            -> release build
-#   ./build_app.sh debug      -> debug build
-#   ./build_app.sh release run -> build then launch
+#   ./build_app.sh                    -> release build
+#   ./build_app.sh debug              -> debug build
+#   ./build_app.sh release universal  -> universal binary (arm64 + x86_64)
+#   ./build_app.sh release run        -> build then launch
 set -euo pipefail
 cd "$(dirname "$0")"
 
 CONFIG="${1:-release}"
-if [ "$CONFIG" = "run" ]; then CONFIG="release"; fi
+TARGET_MODE="${2:-}"
+if [ "$CONFIG" = "run" ]; then CONFIG="release"; TARGET_MODE="run"; fi
 APP="dist/OCR LaTeX.app"
 BUNDLE_NAME="OCRLaTeX"
 
-echo "==> swift build -c $CONFIG"
-swift build -c "$CONFIG" --product "$BUNDLE_NAME"
+if [ "$TARGET_MODE" = "universal" ]; then
+  echo "==> swift build -c $CONFIG (universal: arm64 + x86_64)"
+  swift build -c "$CONFIG" --arch arm64 --arch x86_64 --product "$BUNDLE_NAME"
+  BIN_DIR="$(swift build --show-bin-path -c "$CONFIG" --arch arm64 --arch x86_64)"
+else
+  echo "==> swift build -c $CONFIG"
+  swift build -c "$CONFIG" --product "$BUNDLE_NAME"
+  BIN_DIR="$(swift build --show-bin-path -c "$CONFIG")"
+fi
 
-BIN=".build/$CONFIG/$BUNDLE_NAME"
+BIN="$BIN_DIR/$BUNDLE_NAME"
+
 if [ ! -x "$BIN" ]; then
   echo "error: binary not found at $BIN" >&2
   exit 1
@@ -34,6 +44,6 @@ cp Sources/OCRLaTeX/Resources/*.html "$APP/Contents/Resources/"
 codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || echo "warning: codesign failed (app still runs unsigned)"
 
 echo "==> done: $APP"
-if [ "${2:-}" = "run" ] || [ "${1:-}" = "run" ]; then
+if [ "$TARGET_MODE" = "run" ] || [ "${1:-}" = "run" ]; then
   open "$APP"
 fi

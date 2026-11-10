@@ -167,6 +167,7 @@ struct SettingsView: View {
 
 struct GeneralSettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @ObservedObject private var updates = UpdateService.shared
 
     private var shortcutBinding: Binding<(UInt32, UInt32)> {
         Binding(
@@ -281,6 +282,37 @@ struct GeneralSettingsView: View {
                             .toggleStyle(.switch)
                             .labelsHidden()
                     }
+                }
+
+                SettingsCard("Updates") {
+                    FormRow("Version") {
+                        Text(updates.currentVersion)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                    FormRow("Check automatically") {
+                        Toggle("", isOn: $model.settings.autoUpdateCheck)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                    }
+                    HStack {
+                        Button(updates.isWorking ? "Checking…" : "Check now") {
+                            Task { await updates.checkInteractively() }
+                        }
+                        .disabled(updates.isWorking)
+                        if let update = updates.available {
+                            Button("Install \(update.version)…") {
+                                updates.promptInstall(update)
+                            }
+                        }
+                        Spacer()
+                        if !updates.status.isEmpty {
+                            Text(updates.status)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    Hint("Updates are read from the project's GitHub releases. Builds are ad-hoc signed, so macOS asks for Screen Recording permission again after an update.")
                 }
 
                 SettingsCard("Diagnostics") {

@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app || sudo xcode-select -s /Applications/Xcode.app
+          swift --version
+
+      - name: Build and package universal app
+        run: |
+          ./build_app.sh release universal
+
+      - name: Package zip archive
+        id: package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ZIP_NAME="OCR-LaTeX-${VERSION}-macOS.zip"
+          echo "Packaging ${ZIP_NAME}..."
+          cd dist
+          ditto -c -k --keepParent "OCR LaTeX.app" "../${ZIP_NAME}"
+          cd ..
+          ls -lh "${ZIP_NAME}"
+          echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.package.outputs.zip_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
