@@ -23,9 +23,22 @@ struct OCRLaTeXApp: App {
         MenuBarExtra {
             MenuContent().environmentObject(model)
         } label: {
-            Image(systemName: "text.viewfinder")
+            if let image = menuBarImage {
+                Image(nsImage: image)
+            } else {
+                Image(systemName: "text.viewfinder")
+            }
         }
         .menuBarExtraStyle(.menu)
+    }
+
+    private var menuBarImage: NSImage? {
+        guard let url = Bundle.main.url(forResource: "MenuBarIcon", withExtension: "png"),
+              let img = NSImage(contentsOf: url) else {
+            return nil
+        }
+        img.size = NSSize(width: 18, height: 18)
+        return img
     }
 }
 

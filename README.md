@@ -1,6 +1,10 @@
 # OCR LaTeX
 
 <p align="center">
+  <img src="docs/logo.png" width="128" alt="OCR LaTeX Logo">
+</p>
+
+<p align="center">
   <img src="docs/demo.png" width="660"
        alt="The result window: the rendered formula above its editable LaTeX and the copy buttons">
 </p>

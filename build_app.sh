@@ -36,9 +36,11 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/$BUNDLE_NAME"
 cp Info.plist "$APP/Contents/Info.plist"
 
-# Runtime resources (MathJax + HTML render template)
+# Runtime resources (MathJax + HTML render template + icons)
 cp Sources/OCRLaTeX/Resources/*.js   "$APP/Contents/Resources/"
 cp Sources/OCRLaTeX/Resources/*.html "$APP/Contents/Resources/"
+cp Sources/OCRLaTeX/Resources/*.icns "$APP/Contents/Resources/" 2>/dev/null || true
+cp Sources/OCRLaTeX/Resources/*.png  "$APP/Contents/Resources/" 2>/dev/null || true
 
 # Ad-hoc signature keeps TCC (screen recording) permission stable across launches.
 codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || echo "warning: codesign failed (app still runs unsigned)"
