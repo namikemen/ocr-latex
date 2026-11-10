@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    svg: { fontCache: 'none' },
+    options: { enableMenu: false },
+    startup: {
+      typeset: false,
+      pageReady: function () {
+        return MathJax.startup.defaultPageReady().then(function () {
+          window.__mjReady = true;
+        });
+      }
+    }
+  };
+</script>
+<script src="mathjax-tex-svg.js"></script>
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    background: transparent;
+    font-family: -apple-system, "Helvetica Neue", sans-serif;
+    overflow: hidden;
+  }
+  #preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 6px 10px;
+    box-sizing: border-box;
+    transition: background-color .15s ease;
+  }
+  body.white #preview { background: #ffffff; }
+  body.dark #preview { background: #141414; }
+  body.checker #preview {
+    background-color: #ffffff;
+    background-image:
+      linear-gradient(45deg, #e6e6e6 25%, transparent 25%),
+      linear-gradient(-45deg, #e6e6e6 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e6e6e6 75%),
+      linear-gradient(-45deg, transparent 75%, #e6e6e6 75%);
+    background-size: 14px 14px;
+    background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+  }
+  body.checkerDark #preview {
+    background-color: #1b1b1b;
+    background-image:
+      linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
+      linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
+      linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+    background-size: 14px 14px;
+    background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+  }
+  #preview mjx-container { color: inherit !important; }
+  #preview .placeholder { color: #9a9a9a; font-size: 13px; }
+
+  /* MathJax SVG output ships with an assistive MathML twin. Its clipping
+     rules live in MathJax's external stylesheet, which we do not load, so
+     hide it explicitly (otherwise WebKit renders the formula twice). */
+  mjx-assistive-mml { display: none !important; }
+  mjx-container[jax="SVG"] > svg { display: block; }
+  mjx-container { line-height: 0; }
+</style>
+</head>
+<body class="checker">
+<div id="measure" style="position:absolute;left:-100000px;top:0;width:auto;height:auto;visibility:hidden;"></div>
+<div id="preview"><span class="placeholder">waiting for formula…</span></div>
+<script>
+(function () {
+  function fillColor(color) {
+    return color === 'white' ? '#ffffff' : '#000000';
+  }
+
+  // Returns a standalone, self-contained SVG string plus its pixel size.
+  window.svgFor = function (tex, color) {
+    try {
+      var node = MathJax.tex2svg(tex, { display: true });
+      var svg = node.querySelector('svg');
+      if (!svg) { return { ok: false, error: 'MathJax returned no SVG' }; }
+      // Measure inside the document: detached elements report a zero-size rect.
+      var holder = document.getElementById('measure');
+      holder.innerHTML = '';
+      holder.appendChild(node);
+      var rect = svg.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        rect = node.getBoundingClientRect();
+      }
+      var w = Math.max(1, Math.round(rect.width || 1));
+      var h = Math.max(1, Math.round(rect.height || 1));
+      holder.innerHTML = '';
+      svg.setAttribute('width', w + 'px');
+      svg.setAttribute('height', h + 'px');
+      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svg.setAttribute('style', '');
+      var html = svg.outerHTML
+        .replace(/currentColor/g, fillColor(color))
+        .replace(/vertical-align:[^;"]+;?/g, '');
+      return { ok: true, svg: html, width: w, height: h };
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e) };
+    }
+  };
+
+  window.preview = function (tex, backdrop, color) {
+    var host = document.getElementById('preview');
+    document.body.className = backdrop || 'checker';
+    host.style.color = fillColor(color);
+    if (!tex || !tex.trim()) {
+      host.innerHTML = '<span class="placeholder">no formula</span>';
+      return { ok: true };
+    }
+    try {
+      var node = MathJax.tex2svg(tex, { display: true });
+      host.innerHTML = '';
+      host.appendChild(node);
+      return { ok: true };
+    } catch (e) {
+      host.innerHTML = '<span class="placeholder">invalid LaTeX</span>';
+      return { ok: false, error: String((e && e.message) || e) };
+    }
+  };
+})();
+</script>
+</body>
+</html>
