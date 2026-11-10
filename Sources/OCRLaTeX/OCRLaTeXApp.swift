@@ -38,6 +38,7 @@ struct OCRLaTeXApp: App {
             return nil
         }
         img.size = NSSize(width: 18, height: 18)
+        img.isTemplate = true
         return img
     }
 }
