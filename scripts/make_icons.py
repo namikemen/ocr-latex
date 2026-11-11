@@ -7,9 +7,11 @@ cut out (white -> transparent, edge pixels un-premultiplied), placed on a
 1024 px canvas and given the ambient + key shadows that the other icons in the
 Dock carry.
 
-The tile is drawn at 960 px (94%) rather than Apple's 824/1024 grid: the app
-sits in the Dock next to third-party icons that fill their canvas (ChatGPT,
-for one), and at 80.5% the mark reads as undersized against them.
+The tile is drawn edge to edge (1024 of 1024) rather than Apple's 824/1024
+grid: the app sits in the Dock next to third-party icons that fill their
+entire canvas (ChatGPT, for one), and at 80.5% the mark read as undersized.
+With no margin left there is nowhere to put a drop shadow, so the tile carries
+its own depth from the artwork.
 
 Usage:  python3 scripts/make_icons.py [--source=new_logo.png]
 """
@@ -25,13 +27,12 @@ RES = os.path.join(ROOT, "Sources", "OCRLaTeX", "Resources")
 DOCS = os.path.join(ROOT, "docs")
 
 CANVAS = 1024
-BODY = 960            # 94% of the canvas: fills like third-party Dock icons
+BODY = 1024           # full bleed: fills like third-party Dock icons
 OFFSET = (CANVAS - BODY) // 2
 SS = 2                # supersample factor for shadows
 
-# Ambient and key shadows, sized to stay inside the 32 px margin so the blur
-# is never clipped by the canvas edge.
-SHADOWS = ((3, 4, 40), (8, 7, 60))
+# Drop shadows only make sense while there is margin left to draw them in.
+SHADOWS = ()
 
 # The body colour of the artwork, used to un-premultiply antialiased edges.
 BODY_MIN_CHANNEL = 31
