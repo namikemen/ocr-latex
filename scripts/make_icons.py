@@ -41,21 +41,42 @@ BODY_MIN_CHANNEL = 31
 def art_cutout(path):
     """Load the artwork and turn its white background into transparency.
 
-    Over white, C = a*F + (1-a)*255, so a is recovered from the darkest
-    channel and F is solved back out of the blend. Interior pixels stay
-    byte-identical; only the antialiased rim is touched.
+    Only the region connected to the canvas border counts as background: the
+    artwork's own highlights and glow are light too, and deriving alpha from
+    the colour alone would leave ~25% of the tile translucent, which makes
+    macOS treat the icon as artwork to re-plate instead of a full tile.
+
+    Along the antialiased rim, alpha is solved from the blend over white
+    (C = a*F + (1-a)*255) and F is recovered, so the edge stays dark on any
+    desktop colour.
     """
     rgb = np.array(Image.open(path).convert("RGB")).astype(np.float32)
-    alpha = (255.0 - rgb.min(axis=2)) / (255.0 - BODY_MIN_CHANNEL)
-    alpha = np.clip(alpha, 0.0, 1.0)
-    alpha[alpha < 0.04] = 0.0
-    alpha[alpha > 0.96] = 1.0
+    h, w = rgb.shape[:2]
 
-    safe = np.maximum(alpha, 1e-3)[..., None]
+    near_white = (rgb.min(axis=2) >= 244)
+    mask = Image.fromarray((near_white * 255).astype(np.uint8))
+    flood = mask.copy()
+    for seed in ((0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)):
+        if flood.getpixel(seed) == 255:
+            ImageDraw.floodfill(flood, seed, 128, thresh=0)
+    exterior = np.array(flood) == 128
+
+    # two-pixel band hugging the silhouette carries the antialiasing
+    band = np.array(Image.fromarray((exterior * 255).astype(np.uint8))
+                    .filter(ImageFilter.MaxFilter(5))) > 0
+    band &= ~exterior
+
+    alpha = np.full((h, w), 255.0, dtype=np.float32)
+    alpha[exterior] = 0.0
+
+    edge_alpha = np.clip((255.0 - rgb.min(axis=2)) / (255.0 - BODY_MIN_CHANNEL), 0.0, 1.0)
+    alpha[band] = edge_alpha[band] * 255.0
+
+    safe = np.maximum(alpha / 255.0, 1e-3)[..., None]
     straight = 255.0 + (rgb - 255.0) / safe
-    straight = np.where(alpha[..., None] > 0.0, straight, 0.0)
+    rgb = np.where(band[..., None], straight, rgb)
 
-    rgba = np.dstack([np.clip(straight, 0, 255), alpha * 255.0]).astype(np.uint8)
+    rgba = np.dstack([np.clip(rgb, 0, 255), alpha]).astype(np.uint8)
     return Image.fromarray(rgba)
 
 
