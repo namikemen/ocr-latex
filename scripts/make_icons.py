@@ -172,10 +172,11 @@ def build_icon(sigma_mode="vector"):
 
 
 def build_menu_bar_icon(px):
-    """Monochrome template mark: a bold Σ under a scan bar.
+    """Monochrome template mark: a bold Σ.
 
-    No outer frame: at 18 pt a document outline collapses into mush, so the
-    glyph alone keeps the menu bar mark legible in both light and dark mode.
+    A document frame or a scan bar next to the sigma collapses into mush at
+    18 pt, so the status item carries the glyph alone — it stays legible in
+    light, dark and tinted menu bars because the image is a template.
     """
     s = 8
     im = Image.new("RGBA", (px * s, px * s), (0, 0, 0, 0))
@@ -183,12 +184,12 @@ def build_menu_bar_icon(px):
     sc = px * s / 18.0
     W = H = 18 * sc
 
-    sigma_h = H * 0.72
+    sigma_h = H * 0.76
     sigma_w = sigma_h * 0.80
     sx = (W - sigma_w) / 2
-    sy = (H - sigma_h) / 2 + 0.85 * sc
+    sy = (H - sigma_h) / 2
 
-    stroke = max(1.35 * sc, sigma_h * 0.15)
+    stroke = max(1.5 * sc, sigma_h * 0.155)
     half = stroke / 2
     top_y, bot_y = sy + half, sy + sigma_h - half
     mid = (sx + sigma_w * 0.60, sy + sigma_h / 2)
@@ -197,12 +198,6 @@ def build_menu_bar_icon(px):
     d.line([(sx + half, bot_y), (sx + sigma_w - half, bot_y)], fill=(0, 0, 0, 255), width=int(stroke))
     d.line([(sx + half, top_y), mid], fill=(0, 0, 0, 255), width=int(stroke), joint="curve")
     d.line([mid, (sx + half, bot_y)], fill=(0, 0, 0, 255), width=int(stroke), joint="curve")
-
-    bar_w = sigma_w * 0.94
-    bar_h = 1.3 * sc
-    bar_y = sy - 2.5 * sc
-    d.rounded_rectangle([(W - bar_w) / 2, bar_y - bar_h / 2, (W + bar_w) / 2, bar_y + bar_h / 2],
-                        radius=bar_h / 2, fill=(0, 0, 0, 255))
 
     return im.resize((px, px), Image.Resampling.LANCZOS)
 
