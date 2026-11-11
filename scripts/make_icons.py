@@ -3,9 +3,13 @@
 and docs/logo.png from the flat artwork in new_logo.png.
 
 The source art is a full-bleed 1024x1024 squircle on a white background. It is
-cut out (white -> transparent, edge pixels un-premultiplied), scaled onto
-Apple's icon grid (an 824 px squircle centred in a 1024 px canvas) and given
-the ambient + key shadows that the other icons in the Dock carry.
+cut out (white -> transparent, edge pixels un-premultiplied), placed on a
+1024 px canvas and given the ambient + key shadows that the other icons in the
+Dock carry.
+
+The tile is drawn at 960 px (94%) rather than Apple's 824/1024 grid: the app
+sits in the Dock next to third-party icons that fill their canvas (ChatGPT,
+for one), and at 80.5% the mark reads as undersized against them.
 
 Usage:  python3 scripts/make_icons.py [--source=new_logo.png]
 """
@@ -21,9 +25,13 @@ RES = os.path.join(ROOT, "Sources", "OCRLaTeX", "Resources")
 DOCS = os.path.join(ROOT, "docs")
 
 CANVAS = 1024
-BODY = 824            # Apple grid: icon body is 80.5% of the canvas
+BODY = 960            # 94% of the canvas: fills like third-party Dock icons
 OFFSET = (CANVAS - BODY) // 2
 SS = 2                # supersample factor for shadows
+
+# Ambient and key shadows, sized to stay inside the 32 px margin so the blur
+# is never clipped by the canvas edge.
+SHADOWS = ((3, 4, 40), (8, 7, 60))
 
 # The body colour of the artwork, used to un-premultiply antialiased edges.
 BODY_MIN_CHANNEL = 31
@@ -51,13 +59,13 @@ def art_cutout(path):
 
 
 def add_shadows(body):
-    """Put ambient + key shadows behind an 824 px body on a 1024 canvas."""
+    """Put ambient + key shadows behind the tile on a 1024 canvas."""
     W = CANVAS * SS
     O = OFFSET * SS
     layer_alpha = body.split()[3].resize((BODY * SS, BODY * SS), Image.Resampling.LANCZOS)
 
     out = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-    for offset, blur, value in ((6, 9, 46), (22, 20, 60)):
+    for offset, blur, value in SHADOWS:
         shadow = Image.new("RGBA", (W, W), (0, 0, 0, 0))
         tint = Image.new("RGBA", (BODY * SS, BODY * SS), (5, 12, 30, value))
         shadow.paste(tint, (O, O + offset * SS), layer_alpha)
